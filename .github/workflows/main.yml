@@ -1,0 +1,6 @@
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            QC_Standard_Android_Project.zip
+          sparse-checkout-cone-mode: false
