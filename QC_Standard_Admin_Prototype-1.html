@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#123b35"><title>QC Standard – Admin Prototype</title>
+<style>
+:root{--g:#123b35;--mint:#eaf4ef;--ink:#172824;--muted:#66756f;--line:#dce7e1;--bg:#f5f8f6}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Noto Sans Bengali",sans-serif}
+header{background:linear-gradient(135deg,#123b35,#1c5a4e);color:white;padding:22px 18px;border-radius:0 0 22px 22px}
+.brand{font-size:22px;font-weight:850;margin-top:12px}.sub{font-size:12px;color:#d6e9e1}
+main{max-width:700px;margin:auto;padding:18px 15px 40px}.card{background:white;border:1px solid var(--line);border-radius:16px;padding:16px;margin:12px 0}
+h2{font-size:17px;margin:0 0 5px}.muted{color:var(--muted);font-size:12px;line-height:1.6}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.tile{border:1px solid var(--line);border-radius:13px;background:#fff;padding:13px;text-align:left;min-height:90px;color:var(--ink)}
+.tile b{display:block;font-size:13px;margin-top:8px}.tile span{font-size:21px}
+label{display:block;font-size:12px;font-weight:700;margin:12px 0 5px}
+input,select,textarea{width:100%;padding:11px;border:1px solid #cbd9d1;border-radius:10px;font:inherit;font-size:14px;background:white;color:var(--ink)}
+textarea{min-height:90px;resize:vertical}
+button{cursor:pointer}.primary{background:var(--g);color:white;border:0;border-radius:10px;padding:11px 15px;font-weight:700;margin-top:13px}.secondary{background:var(--mint);color:var(--g);border:0;border-radius:9px;padding:9px 12px;font-weight:700}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px}.hidden{display:none!important}
+.notice{background:#fff8e8;border:1px solid #f0dfb6;color:#72541a;padding:11px;border-radius:10px;font-size:12px;line-height:1.5;margin-top:12px}
+.item{border-top:1px solid var(--line);padding:12px 0}.item:first-child{border-top:0}.item strong{font-size:14px}.item p{margin:5px 0;color:var(--muted);font-size:12px;white-space:pre-wrap}
+.small{font-size:11px;color:var(--muted)}
+@media(min-width:560px){.grid{grid-template-columns:repeat(3,1fr)}}
+</style></head>
+<body>
+<header><div class="sub">QUALITY CONTROL • RPL-E</div><div class="brand">QC STANDARD</div><div class="sub">CEILING FAN QUALITY MANAGEMENT</div></header>
+<main>
+<section id="home">
+ <div class="row"><div><h2>Home Dashboard</h2><div class="muted">QC Standard বিভাগ নির্বাচন করুন</div></div><button class="secondary" onclick="show('login')">Admin Login</button></div>
+ <div class="grid" style="margin-top:15px">
+  <button class="tile" onclick="view('Fan Parts Standards','🌀')"><span>🌀</span><b>Fan Parts Standards</b></button>
+  <button class="tile" onclick="view('Measurement Standards','📏')"><span>📏</span><b>Measurement Standards</b></button>
+  <button class="tile" onclick="view('Defect Standards','⚠️')"><span>⚠️</span><b>Defect Standards</b></button>
+  <button class="tile" onclick="view('Material Standards','🧱')"><span>🧱</span><b>Material Standards</b></button>
+  <button class="tile" onclick="view('QC Knowledge','📘')"><span>📘</span><b>QC Knowledge</b></button>
+ </div>
+</section>
+<section id="login" class="card hidden">
+ <div class="row"><h2>Admin Login</h2><button class="secondary" onclick="show('home')">Home</button></div>
+ <p class="muted">এটি শুধু প্রাথমিক ডেমো। এখানে দেওয়া পাসওয়ার্ড নিরাপদ সার্ভারে যাচাই হয় না।</p>
+ <label>Admin Username</label><input id="user" placeholder="Admin username" autocomplete="username">
+ <label>Password</label><input id="pass" type="password" placeholder="Password" autocomplete="current-password">
+ <button class="primary" onclick="login()">Login</button><div id="loginMsg" class="small"></div>
+</section>
+<section id="admin" class="hidden">
+ <div class="row"><div><h2>Admin Panel</h2><div class="muted">Standard Upload & Management</div></div><button class="secondary" onclick="logout()">Logout</button></div>
+ <div class="card">
+  <h2>নতুন Standard যোগ করুন</h2>
+  <label>বিভাগ নির্বাচন করুন</label>
+  <select id="category"><option>Fan Parts Standards</option><option>Measurement Standards</option><option>Defect Standards</option><option>Material Standards</option><option>QC Knowledge</option></select>
+  <label>Standard-এর নাম</label><input id="title" placeholder="যেমন: Basic Top Cover">
+  <label>Standard / Specification</label><textarea id="body" placeholder="Standard value, tolerance, inspection method ইত্যাদি লিখুন"></textarea>
+  <label>নোট (ঐচ্ছিক)</label><input id="note" placeholder="অতিরিক্ত তথ্য">
+  <button class="primary" onclick="addStandard()">Save Standard</button>
+  <div id="saveMsg" class="small"></div>
+ </div>
+ <div class="card"><h2>যোগ করা Standard</h2><div id="adminList" class="muted">এখনো কোনো Standard নেই</div></div>
+</section>
+<section id="viewer" class="card hidden"><button class="secondary" onclick="show('home')">← Home</button><h2 id="viewTitle"></h2><div id="viewList"></div></section>
+<div class="notice"><b>গুরুত্বপূর্ণ:</b> এই ফাইলটি Admin Panel-এর কার্যপ্রবাহ দেখানোর ডেমো। Login ও তথ্য এই ডিভাইসের ব্রাউজারে সাময়িকভাবে কাজ করে; এখনো অনলাইন ডেটাবেস, নিরাপদ Admin authentication বা অন্য ফোনে live update যুক্ত হয়নি। বাস্তব ব্যবহারের আগে এগুলো সার্ভারে যুক্ত করতে হবে।</div>
+<div class="small" style="text-align:center;margin:18px">QUALITY FIRST • ZERO DEFECT</div>
+</main>
+<script>
+const ids=['home','login','admin','viewer'];
+let standards=JSON.parse(localStorage.getItem('qc_demo_standards')||'[]');
+function show(id){ids.forEach(x=>document.getElementById(x).classList.toggle('hidden',x!==id));if(id==='admin')renderAdmin()}
+function login(){let u=document.getElementById('user').value.trim(),p=document.getElementById('pass').value; if(u==='RPL-E QC'&&p==='DEMO-ONLY'){show('admin')}else{document.getElementById('loginMsg').textContent='ডেমো লগইন: Username RPL-E QC, Password DEMO-ONLY'}}
+function logout(){document.getElementById('pass').value='';show('home')}
+function addStandard(){let c=document.getElementById('category').value,t=document.getElementById('title').value.trim(),b=document.getElementById('body').value.trim(),n=document.getElementById('note').value.trim();if(!t||!b){document.getElementById('saveMsg').textContent='নাম ও Standard লিখুন।';return}standards.unshift({id:Date.now(),c,t,b,n});localStorage.setItem('qc_demo_standards',JSON.stringify(standards));['title','body','note'].forEach(x=>document.getElementById(x).value='');document.getElementById('saveMsg').textContent='ডেমোতে Standard সংরক্ষণ হয়েছে।';renderAdmin()}
+function renderAdmin(){let el=document.getElementById('adminList');el.innerHTML='';if(!standards.length){el.textContent='এখনো কোনো Standard নেই';return}standards.forEach(s=>{let d=document.createElement('div');d.className='item';let strong=document.createElement('strong');strong.textContent=s.t;let p=document.createElement('p');p.textContent=s.c+'\\n'+s.b+(s.n?'\\n'+s.n:'');let del=document.createElement('button');del.className='secondary';del.textContent='Delete';del.onclick=()=>{standards=standards.filter(x=>x.id!==s.id);localStorage.setItem('qc_demo_standards',JSON.stringify(standards));renderAdmin()};d.append(strong,p,del);el.append(d)})}
+function view(c){show('viewer');document.getElementById('viewTitle').textContent=c;let el=document.getElementById('viewList');el.innerHTML='';let a=standards.filter(s=>s.c===c);if(!a.length){el.innerHTML='<div class="muted" style="padding:15px 0">এখনো কোনো Standard যোগ করা হয়নি</div>';return}a.forEach(s=>{let d=document.createElement('div');d.className='item';let h=document.createElement('strong');h.textContent=s.t;let p=document.createElement('p');p.textContent=s.b+(s.n?'\\n'+s.n:'');d.append(h,p);el.append(d)})}
+</script></body></html>
