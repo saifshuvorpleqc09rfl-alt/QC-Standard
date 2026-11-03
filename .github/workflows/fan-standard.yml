@@ -53,7 +53,7 @@ jobs:
         run: gradle assembleDebug bundleRelease --stacktrace
 
       - name: Verify release bundle signing when upload key is configured
-        if: ${{ secrets.FAN_UPLOAD_KEYSTORE_BASE64 != '' }}
+        if: env.HAS_UPLOAD_KEY == 'true'
         working-directory: Fan_Standard_Android_Project
         run: |
           jarsigner -verify -verbose -certs app/build/outputs/bundle/release/app-release.aab
