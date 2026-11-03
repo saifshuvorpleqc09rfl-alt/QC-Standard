@@ -2,6 +2,7 @@ package com.fanstandard.app;
 
 import android.os.Bundle;
 import android.webkit.WebSettings;
+import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.app.Activity;
 import androidx.webkit.WebViewAssetLoader;
@@ -22,6 +23,7 @@ public class MainActivity extends Activity {
         WebViewAssetLoader assetLoader = new WebViewAssetLoader.Builder()
             .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this))
             .build();
+        webView.setWebChromeClient(new WebChromeClient());
         webView.setWebViewClient(new WebViewClientCompat() {
             @Override
             public android.webkit.WebResourceResponse shouldInterceptRequest(
