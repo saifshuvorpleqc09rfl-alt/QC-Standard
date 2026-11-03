@@ -8,11 +8,11 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.webkit.ValueCallback;
 import android.app.Activity;
-import androidx.webkit.WebViewAssetLoader;
-import androidx.webkit.WebViewClientCompat;
+import android.webkit.WebViewClient;
 
 public class MainActivity extends Activity {
     private static final int FILE_CHOOSER_REQUEST = 1001;
+    private static final String APP_URL = "https://saifshuvorpleqc09rfl-alt.github.io/QC-Standard/";
     private WebView webView;
     private ValueCallback<Uri[]> filePathCallback;
 
@@ -25,10 +25,7 @@ public class MainActivity extends Activity {
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setAllowFileAccess(false);
-        settings.setAllowContentAccess(false);
-        WebViewAssetLoader assetLoader = new WebViewAssetLoader.Builder()
-            .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this))
-            .build();
+        settings.setAllowContentAccess(true);
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
             public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback,
@@ -48,14 +45,8 @@ public class MainActivity extends Activity {
                 }
             }
         });
-        webView.setWebViewClient(new WebViewClientCompat() {
-            @Override
-            public android.webkit.WebResourceResponse shouldInterceptRequest(
-                    WebView view, android.webkit.WebResourceRequest request) {
-                return assetLoader.shouldInterceptRequest(request.getUrl());
-            }
-        });
-        webView.loadUrl("https://appassets.androidplatform.net/assets/www/index.html");
+        webView.setWebViewClient(new WebViewClient());
+        webView.loadUrl(APP_URL);
     }
 
     @Override
