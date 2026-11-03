@@ -1,0 +1,1 @@
+Fan Standard build trigger. Build and verify APK artifact.
