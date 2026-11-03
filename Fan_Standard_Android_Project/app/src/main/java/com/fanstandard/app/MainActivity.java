@@ -12,7 +12,7 @@ import android.webkit.WebViewClient;
 
 public class MainActivity extends Activity {
     private static final int FILE_CHOOSER_REQUEST = 1001;
-    private static final String APP_URL = "https://saifshuvorpleqc09rfl-alt.github.io/QC-Standard/?app_version=2";
+    private static final String APP_URL = "https://saifshuvorpleqc09rfl-alt.github.io/QC-Standard/";
     private WebView webView;
     private ValueCallback<Uri[]> filePathCallback;
 
@@ -48,7 +48,7 @@ public class MainActivity extends Activity {
             }
         });
         webView.setWebViewClient(new WebViewClient());
-        webView.loadUrl(APP_URL);
+        webView.loadUrl(APP_URL + "?app_version=3&refresh=" + System.currentTimeMillis());
     }
 
     @Override
