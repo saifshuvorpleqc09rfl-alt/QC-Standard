@@ -26,13 +26,25 @@
   $("adminOpen").onclick=()=>$("adminPanel").classList.toggle("hidden");
   $("login").onclick=async()=>{
     const email=$("email").value.trim(),password=$("password").value;
-    if(!email||!password)return alert("Email ও Password দিন।");$("login").disabled=true;
+    const note=$("loginStatus");
+    const loginMessage=(message,error=false)=>{note.textContent=message;note.style.color=error?"#b42318":"#176b59";note.style.display="block";};
+    if(!email||!password){loginMessage("Email ও Password দুটোই লিখুন।",true);return;}
+    $("login").disabled=true;
+    loginMessage("১/২: Supabase-এ লগইন যাচাই হচ্ছে...");
     try{
-      const result=await api("/auth/v1/token?grant_type=password",{method:"POST",body:JSON.stringify({email,password})});session=result;
+      const result=await api("/auth/v1/token?grant_type=password",{method:"POST",body:JSON.stringify({email,password})});
+      if(!result||!result.access_token||!result.user||!result.user.id) throw new Error("Login response অসম্পূর্ণ। আবার চেষ্টা করুন।");
+      session=result;
+      loginMessage("২/২: Admin অনুমতি যাচাই হচ্ছে...");
       const admins=await api(`/rest/v1/qc_admins?select=user_id&user_id=eq.${encodeURIComponent(result.user.id)}`);
-      if(!admins||!admins.length){session=null;throw new Error("এই অ্যাকাউন্ট Admin হিসেবে অনুমোদিত নয়।");}
-      $("loginBox").classList.add("hidden");$("editor").classList.remove("hidden");alert("Admin Login সফল হয়েছে।");
-    }catch(e){alert("Login হয়নি: "+e.message);}finally{$("login").disabled=false;}
+      if(!Array.isArray(admins)||admins.length===0){session=null;throw new Error("লগইন হয়েছে, কিন্তু এই Email qc_admins তালিকায় Admin হিসেবে নেই।");}
+      $("loginBox").classList.add("hidden");
+      $("editor").classList.remove("hidden");
+      loginMessage("Admin Login সফল হয়েছে।");
+    }catch(e){
+      session=null;
+      loginMessage("Login হয়নি: "+(e.message||"অজানা সমস্যা"),true);
+    }finally{$("login").disabled=false;}
   };
   $("save").onclick=async()=>{
     const title=$("title").value.trim(),content=$("content").value.trim();if(!title||!content)return alert("Title ও Details পূরণ করুন।");$("save").disabled=true;
