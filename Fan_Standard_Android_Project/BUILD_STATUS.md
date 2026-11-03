@@ -1,0 +1,1 @@
+Fan Standard Android build tracking. The APK is not considered ready until the GitHub Actions build completes successfully and the APK artifact is verified.
