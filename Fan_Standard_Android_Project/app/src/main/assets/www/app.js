@@ -4,10 +4,27 @@
   const $ = id => document.getElementById(id);
   const headers = token => ({apikey:key, ...(token ? {Authorization:`Bearer ${token}`} : {}), "Content-Type":"application/json"});
   async function api(path, options={}) {
-    const res = await fetch(base + path, {...options, headers:{...headers(session?.access_token), ...(options.headers||{})}});
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 20000);
+    let res;
+    try {
+      res = await fetch(base + path, {
+        ...options,
+        signal: controller.signal,
+        headers:{...headers(session?.access_token), ...(options.headers||{})}
+      });
+    } catch (e) {
+      if (e.name === "AbortError") throw new Error("সার্ভার থেকে ২০ সেকেন্ডেও উত্তর আসেনি। ইন্টারনেট সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।");
+      throw new Error("সার্ভারে সংযোগ হয়নি। ইন্টারনেট সংযোগ পরীক্ষা করুন।");
+    } finally {
+      clearTimeout(timeout);
+    }
     const raw = await res.text(); let data = null;
     try { data = raw ? JSON.parse(raw) : null; } catch (_) { data = raw; }
-    if (!res.ok) throw new Error(data?.message || data?.msg || data?.hint || `Request failed (${res.status})`);
+    if (!res.ok) {
+      const message = data?.message || data?.msg || data?.hint || data?.error_description || data?.error || data?.details;
+      throw new Error(message || `সার্ভার সমস্যা (HTTP ${res.status})`);
+    }
     return data;
   }
   function showStatus(message,error=false){$("status").textContent=message;$("status").style.color=error?"#b42318":"#657873";}
