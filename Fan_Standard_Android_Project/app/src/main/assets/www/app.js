@@ -31,12 +31,12 @@
   function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
   function render(){
     const q=$("search").value.trim().toLowerCase(), cat=$("category").value;
-    const rows=allRows.filter(r=>(!cat||r.category===cat)&&(!q||`${r.title||""} ${r.content||""} ${r.category||""}`.toLowerCase().includes(q)));
-    $("standards").innerHTML=rows.length?rows.map(r=>`<article class="item"><span class="tag">${esc(r.category||"Standard")}</span><h3>${esc(r.title)}</h3><p>${esc(r.content)}</p></article>`).join(""):`<article class="item"><p>এখনো কোনো প্রকাশিত Standard পাওয়া যায়নি।</p></article>`;
+    const rows=allRows.filter(r=>(!cat||r.category===cat)&&(!q||`${r.Title||""} ${r.content||""} ${r.category||""}`.toLowerCase().includes(q)));
+    $("standards").innerHTML=rows.length?rows.map(r=>`<article class="item"><span class="tag">${esc(r.category||"Standard")}</span><h3>${esc(r.Title)}</h3><p>${esc(r.content)}</p></article>`).join(""):`<article class="item"><p>এখনো কোনো প্রকাশিত Standard পাওয়া যায়নি।</p></article>`;
   }
   async function loadStandards(){
     showStatus("স্ট্যান্ডার্ড লোড হচ্ছে...");
-    try{allRows=await api(`/rest/v1/${table}?select=id,title,category,content,is_published&is_published=eq.true&order=created_at.desc`);render();showStatus(`${allRows.length}টি Published Standard`);}
+    try{allRows=await api(`/rest/v1/${table}?select=id,Title,category,content,is_published&is_published=eq.true&order=created_at.desc`);render();showStatus(`${allRows.length}টি Published Standard`);}
     catch(e){showStatus("ডেটা লোড হয়নি: "+e.message,true);$("standards").innerHTML="";}
   }
   $("search").addEventListener("input",render);$("category").addEventListener("change",render);
@@ -66,7 +66,7 @@
   $("save").onclick=async()=>{
     const title=$("title").value.trim(),content=$("content").value.trim();if(!title||!content)return alert("Title ও Details পূরণ করুন।");$("save").disabled=true;
     try{
-      await api(`/rest/v1/${table}`,{method:"POST",headers:{"Prefer":"return=representation"},body:JSON.stringify({title,category:$("newCategory").value,content,is_published:$("publishNow").checked})});
+      await api(`/rest/v1/${table}`,{method:"POST",headers:{"Prefer":"return=representation"},body:JSON.stringify({Title:title,category:$("newCategory").value,content,is_published:$("publishNow").checked})});
       $("title").value="";$("content").value="";alert("Standard সেভ হয়েছে।");await loadStandards();
     }catch(e){alert("Save হয়নি: "+e.message);}finally{$("save").disabled=false;}
   };
