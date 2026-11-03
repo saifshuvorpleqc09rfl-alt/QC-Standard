@@ -33,8 +33,14 @@
     catch(e){showStatus("ডেটা লোড হয়নি: "+e.message,true);$("standards").innerHTML="";}
   }
   async function loadAdminRows(){
-    adminRows=await api(`/rest/v1/${table}?select=id,Title,title,category,content,is_published,image_url&order=id.desc`);
-    renderAdminRows();
+    const host=$("adminStandards");
+    host.innerHTML='<p class="hint">Standard তালিকা লোড হচ্ছে...</p>';
+    try{
+      adminRows=await api(`/rest/v1/${table}?select=id,Title,title,category,content,is_published,image_url&order=id.desc`);
+      renderAdminRows();
+    }catch(e){
+      host.innerHTML=`<p class="admin-load-error">Standard তালিকা লোড হয়নি: ${esc(e.message)}<br>ইন্টারনেট বা Admin permission পরীক্ষা করুন।</p>`;
+    }
   }
   function renderAdminRows(){
     const host=$("adminStandards");
