@@ -1,17 +1,46 @@
 plugins {
     id 'com.android.application'
 }
+
+def uploadStorePath = System.getenv("FAN_UPLOAD_KEYSTORE_PATH")
+def uploadStorePassword = System.getenv("FAN_UPLOAD_KEYSTORE_PASSWORD")
+def uploadKeyAlias = System.getenv("FAN_UPLOAD_KEY_ALIAS")
+def uploadKeyPassword = System.getenv("FAN_UPLOAD_KEY_PASSWORD")
+def hasReleaseKey = uploadStorePath && uploadStorePassword && uploadKeyAlias && uploadKeyPassword
+
 android {
     namespace 'com.fanstandard.app'
-    compileSdk 35
+    compileSdk 36
+
     defaultConfig {
         applicationId 'com.fanstandard.app'
         minSdk 23
-        targetSdk 35
+        targetSdk 36
         versionCode 1
         versionName '1.0'
     }
+
+    signingConfigs {
+        release {
+            if (hasReleaseKey) {
+                storeFile file(uploadStorePath)
+                storePassword uploadStorePassword
+                keyAlias uploadKeyAlias
+                keyPassword uploadKeyPassword
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            if (hasReleaseKey) {
+                signingConfig signingConfigs.release
+            }
+            minifyEnabled false
+        }
+    }
 }
+
 dependencies {
     implementation 'androidx.webkit:webkit:1.12.1'
 }
