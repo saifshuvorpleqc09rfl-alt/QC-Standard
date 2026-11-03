@@ -66,7 +66,7 @@
   $("save").onclick=async()=>{
     const title=$("title").value.trim(),content=$("content").value.trim();if(!title||!content)return alert("Title ও Details পূরণ করুন।");$("save").disabled=true;
     try{
-      await api(`/rest/v1/${table}`,{method:"POST",headers:{"Prefer":"return=representation"},body:JSON.stringify({Title:title,category:$("newCategory").value,content,is_published:$("publishNow").checked})});
+      await api(`/rest/v1/${table}`,{method:"POST",headers:{"Prefer":"return=representation"},body:JSON.stringify({Title:title,title:title,category:$("newCategory").value,content,is_published:$("publishNow").checked})});
       $("title").value="";$("content").value="";alert("Standard সেভ হয়েছে।");await loadStandards();
     }catch(e){alert("Save হয়নি: "+e.message);}finally{$("save").disabled=false;}
   };
