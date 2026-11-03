@@ -1,75 +1,113 @@
 (() => {
-  const cfg = window.FAN_CONFIG, base = cfg.SUPABASE_URL, key = cfg.SUPABASE_ANON_KEY, table = cfg.STANDARDS_TABLE;
-  let session = null, allRows = [];
-  const $ = id => document.getElementById(id);
-  const headers = token => ({apikey:key, ...(token ? {Authorization:`Bearer ${token}`} : {}), "Content-Type":"application/json"});
-  async function api(path, options={}) {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 20000);
-    let res;
-    try {
-      res = await fetch(base + path, {
-        ...options,
-        signal: controller.signal,
-        headers:{...headers(session?.access_token), ...(options.headers||{})}
-      });
-    } catch (e) {
-      if (e.name === "AbortError") throw new Error("সার্ভার থেকে ২০ সেকেন্ডেও উত্তর আসেনি। ইন্টারনেট সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।");
-      throw new Error("সার্ভারে সংযোগ হয়নি। ইন্টারনেট সংযোগ পরীক্ষা করুন।");
-    } finally {
-      clearTimeout(timeout);
-    }
-    const raw = await res.text(); let data = null;
-    try { data = raw ? JSON.parse(raw) : null; } catch (_) { data = raw; }
-    if (!res.ok) {
-      const message = data?.message || data?.msg || data?.hint || data?.error_description || data?.error || data?.details;
-      throw new Error(message || `সার্ভার সমস্যা (HTTP ${res.status})`);
-    }
+  const cfg=window.FAN_CONFIG,base=cfg.SUPABASE_URL,key=cfg.SUPABASE_ANON_KEY,table=cfg.STANDARDS_TABLE;
+  const bucket="qc-standard-images";
+  let session=null,allRows=[],adminRows=[],editingId=null,selectedImage=null;
+  const $=id=>document.getElementById(id);
+  const headers=token=>({apikey:key,...(token?{Authorization:`Bearer ${token}`:{}),"Content-Type":"application/json"});
+  async function api(path,options={}){
+    const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),20000);let res;
+    try{res=await fetch(base+path,{...options,signal:controller.signal,headers:{...headers(session?.access_token),...(options.headers||{})}});}
+    catch(e){if(e.name==="AbortError")throw new Error("সার্ভার থেকে উত্তর আসেনি। আবার চেষ্টা করুন।");throw new Error("সার্ভারে সংযোগ হয়নি।");}
+    finally{clearTimeout(timeout);}
+    const raw=await res.text();let data=null;try{data=raw?JSON.parse(raw):null;}catch(_){data=raw;}
+    if(!res.ok)throw new Error(data?.message||data?.hint||data?.details||data?.error||`সার্ভার সমস্যা (HTTP ${res.status})`);
     return data;
   }
-  function showStatus(message,error=false){$("status").textContent=message;$("status").style.color=error?"#b42318":"#657873";}
   function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
-  function render(){
-    const q=$("search").value.trim().toLowerCase(), cat=$("category").value;
-    const rows=allRows.filter(r=>(!cat||r.category===cat)&&(!q||`${r.Title||""} ${r.content||""} ${r.category||""}`.toLowerCase().includes(q)));
-    $("standards").innerHTML=rows.length?rows.map(r=>`<article class="item"><span class="tag">${esc(r.category||"Standard")}</span><h3>${esc(r.Title)}</h3><p>${esc(r.content)}</p></article>`).join(""):`<article class="item"><p>এখনো কোনো প্রকাশিত Standard পাওয়া যায়নি।</p></article>`;
+  function titleOf(r){return r.Title||r.title||"Untitled";}
+  function showStatus(m,error=false){$("status").textContent=m;$("status").style.color=error?"#b42318":"#657873";}
+  function renderPublic(){
+    const q=$("search").value.trim().toLowerCase(),cat=$("category").value;
+    const rows=allRows.filter(r=>(!cat||r.category===cat)&&(!q||`${titleOf(r)} ${r.content||""} ${r.category||""}`.toLowerCase().includes(q)))
+      .sort((a,b)=>(a.category||"").localeCompare(b.category||"")||titleOf(a).localeCompare(titleOf(b)));
+    if(!rows.length){$("standards").innerHTML='<article class="item"><p>এখনো কোনো Published Standard পাওয়া যায়নি।</p></article>';return;}
+    let last="";const html=[];
+    for(const r of rows){if(r.category!==last){last=r.category||"Other";html.push(`<h3 class="category-heading">${esc(last)}</h3>`);}
+      html.push(`<article class="item">${r.image_url?`<img class="standard-image" src="${esc(r.image_url)}" alt="${esc(titleOf(r))}" loading="lazy">`:""}<span class="tag">${esc(r.category||"Standard")}</span><h3>${esc(titleOf(r))}</h3><p>${esc(r.content)}</p></article>`);
+    }
+    $("standards").innerHTML=html.join("");
   }
   async function loadStandards(){
     showStatus("স্ট্যান্ডার্ড লোড হচ্ছে...");
-    try{allRows=await api(`/rest/v1/${table}?select=id,Title,category,content,is_published&is_published=eq.true&order=created_at.desc`);render();showStatus(`${allRows.length}টি Published Standard`);}
+    try{allRows=await api(`/rest/v1/${table}?select=id,Title,title,category,content,is_published,image_url&is_published=eq.true&order=category.asc,Title.asc`);renderPublic();showStatus(`${allRows.length}টি Published Standard`);}
     catch(e){showStatus("ডেটা লোড হয়নি: "+e.message,true);$("standards").innerHTML="";}
   }
-  $("search").addEventListener("input",render);$("category").addEventListener("change",render);
+  async function loadAdminRows(){
+    adminRows=await api(`/rest/v1/${table}?select=id,Title,title,category,content,is_published,image_url&order=id.desc`);
+    renderAdminRows();
+  }
+  function renderAdminRows(){
+    const host=$("adminStandards");
+    if(!adminRows.length){host.innerHTML='<p class="hint">এখনো কোনো Standard নেই।</p>';return;}
+    host.innerHTML=adminRows.map(r=>`<article class="admin-row"><div><strong>${esc(titleOf(r))}</strong><span class="tag">${esc(r.category||"Other")}</span><span class="state ${r.is_published?"published":"draft"}">${r.is_published?"Published":"Draft"}</span></div><div class="admin-actions"><button class="outline small" data-edit="${r.id}">Edit</button><button class="outline small" data-publish="${r.id}">${r.is_published?"Unpublish":"Publish"}</button><button class="danger small" data-delete="${r.id}">Delete</button></div></article>`).join("");
+    host.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>startEdit(Number(b.dataset.edit)));
+    host.querySelectorAll("[data-publish]").forEach(b=>b.onclick=()=>togglePublish(Number(b.dataset.publish)));
+    host.querySelectorAll("[data-delete]").forEach(b=>b.onclick=()=>deleteStandard(Number(b.dataset.delete)));
+  }
+  function resetForm(){
+    editingId=null;selectedImage=null;$("title").value="";$("content").value="";$("newCategory").value="Fan Parts";$("publishNow").checked=false;$("imageFile").value="";$("imagePreview").innerHTML="";$("save").textContent="Save Standard";$("cancelEdit").classList.add("hidden");$("formHeading").textContent="নতুন Standard যোগ করুন";
+  }
+  function startEdit(id){
+    const r=adminRows.find(x=>Number(x.id)===id);if(!r)return;
+    editingId=id;$("title").value=titleOf(r);$("content").value=r.content||"";$("newCategory").value=r.category||"Fan Parts";$("publishNow").checked=!!r.is_published;
+    selectedImage=null;$("imageFile").value="";$("imagePreview").innerHTML=r.image_url?`<img class="preview-image" src="${esc(r.image_url)}" alt="বর্তমান ছবি">`:"";
+    $("save").textContent="Update Standard";$("cancelEdit").classList.remove("hidden");$("formHeading").textContent="Standard Edit করুন";
+    $("editor").scrollIntoView({behavior:"smooth",block:"start"});
+  }
+  async function uploadImage(){
+    if(!selectedImage)return null;
+    if(!selectedImage.type.startsWith("image/"))throw new Error("শুধু ছবি নির্বাচন করুন।");
+    if(selectedImage.size>5*1024*1024)throw new Error("ছবির সাইজ ৫ MB-এর মধ্যে রাখুন।");
+    const ext=(selectedImage.name.split(".").pop()||"jpg").toLowerCase().replace(/[^a-z0-9]/g,"")||"jpg";
+    const path=`${session.user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    await api(`/storage/v1/object/${bucket}/${path}`,{method:"POST",headers:{"Content-Type":selectedImage.type,"x-upsert":"false"},body:selectedImage});
+    return `${base}/storage/v1/object/public/${bucket}/${path}`;
+  }
+  $("imageFile").addEventListener("change",e=>{
+    selectedImage=e.target.files?.[0]||null;
+    $("imagePreview").innerHTML=selectedImage?`<img class="preview-image" src="${URL.createObjectURL(selectedImage)}" alt="নির্বাচিত ছবি">`:"";
+  });
+  $("save").onclick=async()=>{
+    const title=$("title").value.trim(),content=$("content").value.trim();
+    if(!title||!content)return alert("Title ও Details পূরণ করুন।");
+    $("save").disabled=true;
+    try{
+      const image_url=await uploadImage();
+      const payload={Title:title,title,category:$("newCategory").value,content,is_published:$("publishNow").checked};
+      if(image_url)payload.image_url=image_url;
+      if(editingId!==null)await api(`/rest/v1/${table}?id=eq.${editingId}`,{method:"PATCH",headers:{"Prefer":"return=representation"},body:JSON.stringify(payload)});
+      else await api(`/rest/v1/${table}`,{method:"POST",headers:{"Prefer":"return=representation"},body:JSON.stringify(payload)});
+      alert(editingId!==null?"Standard Update হয়েছে।":"Standard Save হয়েছে।");resetForm();await Promise.all([loadStandards(),loadAdminRows()]);
+    }catch(e){alert("কাজটি সম্পন্ন হয়নি: "+e.message);}finally{$("save").disabled=false;}
+  };
+  async function togglePublish(id){
+    const r=adminRows.find(x=>Number(x.id)===id);if(!r)return;
+    try{await api(`/rest/v1/${table}?id=eq.${id}`,{method:"PATCH",headers:{"Prefer":"return=representation"},body:JSON.stringify({is_published:!r.is_published})});await Promise.all([loadStandards(),loadAdminRows()]);}
+    catch(e){alert("Publish অবস্থা পরিবর্তন হয়নি: "+e.message);}
+  }
+  async function deleteStandard(id){
+    const r=adminRows.find(x=>Number(x.id)===id);if(!r||!confirm(`"${titleOf(r)}" মুছে ফেলবেন? এই কাজটি ফিরিয়ে আনা যাবে না।`))return;
+    try{await api(`/rest/v1/${table}?id=eq.${id}`,{method:"DELETE"});if(editingId===id)resetForm();await Promise.all([loadStandards(),loadAdminRows()]);}
+    catch(e){alert("Delete হয়নি: "+e.message);}
+  }
+  $("search").addEventListener("input",renderPublic);$("category").addEventListener("change",renderPublic);
   $("adminOpen").onclick=()=>$("adminPanel").classList.toggle("hidden");
+  $("cancelEdit").onclick=resetForm;
   $("login").onclick=async()=>{
-    const email=$("email").value.trim(),password=$("password").value;
-    const note=$("loginStatus");
-    const loginMessage=(message,error=false)=>{note.textContent=message;note.style.color=error?"#b42318":"#176b59";note.style.display="block";};
-    if(!email||!password){loginMessage("Email ও Password দুটোই লিখুন।",true);return;}
-    $("login").disabled=true;
-    loginMessage("১/২: Supabase-এ লগইন যাচাই হচ্ছে...");
+    const email=$("email").value.trim(),password=$("password").value,note=$("loginStatus");
+    const msg=(m,error=false)=>{note.textContent=m;note.style.color=error?"#b42318":"#176b59";note.style.display="block";};
+    if(!email||!password){msg("Email ও Password দুটোই লিখুন।",true);return;}
+    $("login").disabled=true;msg("লগইন যাচাই হচ্ছে...");
     try{
       const result=await api("/auth/v1/token?grant_type=password",{method:"POST",body:JSON.stringify({email,password})});
-      if(!result||!result.access_token||!result.user||!result.user.id) throw new Error("Login response অসম্পূর্ণ। আবার চেষ্টা করুন।");
+      if(!result?.access_token||!result.user?.id)throw new Error("Login response অসম্পূর্ণ।");
       session=result;
-      loginMessage("২/২: Admin অনুমতি যাচাই হচ্ছে...");
       const admins=await api(`/rest/v1/qc_admins?select=user_id&user_id=eq.${encodeURIComponent(result.user.id)}`);
-      if(!Array.isArray(admins)||admins.length===0){session=null;throw new Error("লগইন হয়েছে, কিন্তু এই Email qc_admins তালিকায় Admin হিসেবে নেই।");}
-      $("loginBox").classList.add("hidden");
-      $("editor").classList.remove("hidden");
-      loginMessage("Admin Login সফল হয়েছে।");
-    }catch(e){
-      session=null;
-      loginMessage("Login হয়নি: "+(e.message||"অজানা সমস্যা"),true);
-    }finally{$("login").disabled=false;}
+      if(!Array.isArray(admins)||!admins.length){session=null;throw new Error("এই Email Admin তালিকায় নেই।");}
+      $("loginBox").classList.add("hidden");$("editor").classList.remove("hidden");msg("Admin Login সফল হয়েছে।");
+      await loadAdminRows();
+    }catch(e){session=null;msg("Login হয়নি: "+e.message,true);}finally{$("login").disabled=false;}
   };
-  $("save").onclick=async()=>{
-    const title=$("title").value.trim(),content=$("content").value.trim();if(!title||!content)return alert("Title ও Details পূরণ করুন।");$("save").disabled=true;
-    try{
-      await api(`/rest/v1/${table}`,{method:"POST",headers:{"Prefer":"return=representation"},body:JSON.stringify({Title:title,title:title,category:$("newCategory").value,content,is_published:$("publishNow").checked})});
-      $("title").value="";$("content").value="";alert("Standard সেভ হয়েছে।");await loadStandards();
-    }catch(e){alert("Save হয়নি: "+e.message);}finally{$("save").disabled=false;}
-  };
-  $("logout").onclick=()=>{session=null;$("editor").classList.add("hidden");$("loginBox").classList.remove("hidden");$("password").value="";};
+  $("logout").onclick=()=>{session=null;adminRows=[];resetForm();$("editor").classList.add("hidden");$("loginBox").classList.remove("hidden");$("password").value="";};
   loadStandards();
 })();
