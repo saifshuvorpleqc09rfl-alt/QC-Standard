@@ -2,7 +2,7 @@
   const cfg = window.FAN_CONFIG, base = cfg.SUPABASE_URL, key = cfg.SUPABASE_ANON_KEY, table = cfg.STANDARDS_TABLE;
   let session = null, allRows = [];
   const $ = id => document.getElementById(id);
-  const headers = token => ({apikey:key, Authorization:`Bearer ${token || key}`, "Content-Type":"application/json"});
+  const headers = token => ({apikey:key, ...(token ? {Authorization:`Bearer ${token}`} : {}), "Content-Type":"application/json"});
   async function api(path, options={}) {
     const res = await fetch(base + path, {...options, headers:{...headers(session?.access_token), ...(options.headers||{})}});
     const raw = await res.text(); let data = null;
