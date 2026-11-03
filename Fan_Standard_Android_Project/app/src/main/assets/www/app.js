@@ -3,7 +3,7 @@
   const bucket="qc-standard-images";
   let session=null,allRows=[],adminRows=[],editingId=null,selectedImage=null;
   const $=id=>document.getElementById(id);
-  const headers=token=>({apikey:key,...(token?{Authorization:`Bearer ${token}`:{}),"Content-Type":"application/json"});
+  const headers=token=>({apikey:key,...(token ? {Authorization:`Bearer ${token}`} : {}),"Content-Type":"application/json"});
   async function api(path,options={}){
     const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),20000);let res;
     try{res=await fetch(base+path,{...options,signal:controller.signal,headers:{...headers(session?.access_token),...(options.headers||{})}});}
