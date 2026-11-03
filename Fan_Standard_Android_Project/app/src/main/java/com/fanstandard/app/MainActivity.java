@@ -12,7 +12,7 @@ import android.webkit.WebViewClient;
 
 public class MainActivity extends Activity {
     private static final int FILE_CHOOSER_REQUEST = 1001;
-    private static final String APP_URL = "https://saifshuvorpleqc09rfl-alt.github.io/QC-Standard/";
+    private static final String APP_URL = "https://saifshuvorpleqc09rfl-alt.github.io/QC-Standard/?app_version=2";
     private WebView webView;
     private ValueCallback<Uri[]> filePathCallback;
 
@@ -24,6 +24,8 @@ public class MainActivity extends Activity {
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
+        settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
+        webView.clearCache(true);
         settings.setAllowFileAccess(false);
         settings.setAllowContentAccess(true);
         webView.setWebChromeClient(new WebChromeClient() {
