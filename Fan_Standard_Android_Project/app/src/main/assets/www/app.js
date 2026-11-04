@@ -9,9 +9,9 @@
   function updateBottomNav(){
     document.querySelectorAll(".nav-item").forEach(button=>{const active=button.dataset.tab===activeTab;button.classList.toggle("active",active);if(active)button.setAttribute("aria-current","page");else button.removeAttribute("aria-current");});
     const home=activeTab==="home",categories=activeTab==="categories";
-    $(".intro").classList.toggle("hidden",!home);
+    document.querySelector(".intro").classList.toggle("hidden",!home);
     $("categoryShortcuts").classList.toggle("hidden",!(home||categories));
-    $(".filters").classList.toggle("hidden",!home);
+    document.querySelector(".filters").classList.toggle("hidden",!home);
     $("results-toolbar").classList.toggle("hidden",categories);
     $("homeBack").classList.toggle("hidden",!home||(!selectedCategory&&!$("search").value.trim()));
   }
