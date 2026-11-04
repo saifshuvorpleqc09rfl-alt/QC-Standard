@@ -46,3 +46,5 @@ header{padding-right:8px}
 .menu-wrap{margin-right:0}
 
 .developer-credit{display:inline-block;margin-top:6px;font-size:10px;letter-spacing:.2px;color:#71817b}
+
+.tutorial-item p{line-height:1.8;white-space:pre-line}
