@@ -77,3 +77,13 @@ header{padding-right:8px}
 .clear-search.hidden{display:none!important}
 @media(min-width:600px){.filters{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){.search-box,.search-icon,.clear-search{transition:none}}
+
+
+/* Smooth public navigation */
+.results-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:38px}
+.results-toolbar .status{flex:1;min-width:0}
+#homeBack{flex:0 0 auto}
+#standards{scroll-margin-top:88px}
+#standards>.item,#standards>.category-heading{animation:fan-standard-enter .24s ease both}
+@keyframes fan-standard-enter{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}#standards>.item,#standards>.category-heading{animation:none}}
