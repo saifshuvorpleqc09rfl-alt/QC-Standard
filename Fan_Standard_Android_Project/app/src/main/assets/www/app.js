@@ -18,6 +18,20 @@
   function safeImageUrl(value){try{const u=new URL(value,base),origin=new URL(base).origin;if(u.protocol!=="https:"||u.origin!==origin||!u.pathname.startsWith(`/storage/v1/object/public/${bucket}/`))return "";return u.href;}catch(_){return "";}}
   function showStatus(m,error=false){$("status").textContent=m;$("status").style.color=error?"#b42318":"#657873";}
   const adminPanel=$("adminPanel");
+  let searchHistoryActive=false;
+  if(!history.state?.fanStandardView)history.replaceState({fanStandardView:"home",fanStandardCategory:"",fanStandardQuery:""},"",location.pathname+location.search);
+  function syncHomeBack(){
+    const active=!!selectedCategory||!!$("search").value.trim();
+    $("homeBack").classList.toggle("hidden",!active);
+  }
+  function restorePublicView(state){
+    selectedCategory=state?.fanStandardCategory||"";
+    $("search").value=state?.fanStandardQuery||"";
+    searchHistoryActive=state?.fanStandardView==="search";
+    renderPublic();
+    if(selectedCategory)requestAnimationFrame(()=>$("standards").scrollIntoView({behavior:"smooth",block:"start"}));
+    else window.scrollTo({top:0,behavior:"smooth"});
+  }
   function finishLoadingScreen(){
     const screen=$("loadingScreen");if(!screen||screen.dataset.finished)return;
     screen.dataset.finished="true";
@@ -43,8 +57,9 @@
     if(location.hash==="#admin")history.back();
     window.scrollTo({top:0,behavior:"smooth"});
   }
-  window.addEventListener("popstate",()=>{
+  window.addEventListener("popstate",event=>{
     if(!adminPanel.classList.contains("hidden"))adminPanel.classList.add("hidden");
+    restorePublicView(event.state);
   });
   async function loadMaintenanceStatus(){
     const box=$("maintenanceStatus");if(!box)return;
@@ -64,6 +79,7 @@
   const appTutorials=[{"title":"ক্যাটাগরি থেকে Standard দেখুন","content":"১. Home page-এ আপনার প্রয়োজনীয় Category নির্বাচন করুন।\\n২. নির্বাচিত Category-এর Published Standard-গুলো দেখাবে।\\n৩. অন্য Category দেখতে সেটিতে চাপ দিন।"},{"title":"Search ব্যবহার করুন","content":"১. Search বক্সে Standard-এর নাম বা প্রয়োজনীয় শব্দ লিখুন।\\n২. মিল থাকা Published Standard-গুলো দেখাবে।\\n৩. Search মুছে দিলে আবার Category নির্বাচন করে Standard দেখতে পারবেন।"},{"title":"Standard-এর বিস্তারিত পড়ুন","content":"১. Standard-এর Title ও Category দেখুন।\\n২. Details অংশে দেওয়া নির্দেশনা মনোযোগ দিয়ে পড়ুন।\\n৩. কোনো ছবি থাকলে সেটিও দেখে নিন।"},{"title":"ছবি দেখা","content":"কোনো Standard-এর সঙ্গে ছবি যুক্ত থাকলে সেটি Standard-এর কার্ডে দেখা যাবে। ছবিটি দেখে প্রয়োজনীয় অংশ বা মাপ বুঝে নিন।"},{"title":"Maintenance Status দেখা","content":"১. উপরের ডান পাশের তিন-ডট মেনুতে চাপ দিন।\\n২. Maintenance নির্বাচন করুন।\\n৩. সর্বশেষ সিস্টেম চেকের অবস্থা দেখতে পারবেন।"}]; 
   function renderPublic(){
     const q=$("search").value.trim().toLowerCase(),cat=selectedCategory;
+    syncHomeBack();
     document.querySelectorAll(".category-tile").forEach(button=>button.classList.toggle("active",button.dataset.category===cat));
     if(!q&&!cat){$("standards").innerHTML="";showStatus("Standard দেখতে একটি Category নির্বাচন করুন অথবা Search করুন।");return;}
     if(cat==="App Tutorial"){
@@ -166,12 +182,31 @@
   function updateSearch(){
     const hasQuery=!!searchInput.value.trim();
     clearSearch.classList.toggle("hidden",!hasQuery);
+    if(hasQuery&&!searchHistoryActive){
+      history.pushState({fanStandardView:"search",fanStandardCategory:selectedCategory,fanStandardQuery:""},"","#search");
+      searchHistoryActive=true;
+    }
     if(hasQuery)selectedCategory="";
     renderPublic();
   }
   searchInput.addEventListener("input",updateSearch);
-  clearSearch.addEventListener("click",()=>{searchInput.value="";updateSearch();searchInput.focus();});
-  $("categoryShortcuts").addEventListener("click",event=>{const button=event.target.closest("[data-category]");if(!button)return;selectedCategory=button.dataset.category||"";renderPublic();});
+  clearSearch.addEventListener("click",()=>{
+    searchInput.value="";
+    if(searchHistoryActive){searchHistoryActive=false;history.back();}
+    else updateSearch();
+    searchInput.focus();
+  });
+  $("homeBack").addEventListener("click",()=>{
+    if(history.state?.fanStandardView==="category"||history.state?.fanStandardView==="search")history.back();
+    else{selectedCategory="";searchInput.value="";searchHistoryActive=false;renderPublic();window.scrollTo({top:0,behavior:"smooth"});}
+  });
+  $("categoryShortcuts").addEventListener("click",event=>{
+    const button=event.target.closest("[data-category]");if(!button)return;
+    selectedCategory=button.dataset.category||"";searchInput.value="";searchHistoryActive=false;
+    history.pushState({fanStandardView:"category",fanStandardCategory:selectedCategory,fanStandardQuery:""},"","#category-"+encodeURIComponent(selectedCategory.toLowerCase().replace(/\\s+/g,"-")));
+    renderPublic();
+    requestAnimationFrame(()=>$("standards").scrollIntoView({behavior:"smooth",block:"start"}));
+  });
 
   $("adminBack").onclick=closeAdmin;
   $("cancelEdit").onclick=resetForm;
