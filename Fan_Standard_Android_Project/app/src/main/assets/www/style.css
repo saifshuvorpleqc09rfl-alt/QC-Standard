@@ -18,3 +18,12 @@ button{border:0;border-radius:10px;padding:12px 15px;font-weight:700;font-size:1
 .admin-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:5px}.danger{background:#fff0ef;color:#a52822;border:1px solid #f2cfcc}
 #cancelEdit{width:100%;margin-top:7px}
 @media(max-width:420px){.admin-row{align-items:flex-start;flex-direction:column}.admin-actions{justify-content:flex-start}}
+
+/* Admin navigation and maintenance indicator */
+html{scroll-behavior:smooth;scroll-padding-top:82px}
+.admin-panel{scroll-margin-top:82px}
+.panel-controls{display:flex;gap:7px;align-items:center}
+.maintenance-status{margin:12px 0;padding:11px 12px;border:1px solid #dce7e3;border-radius:10px;background:#f5f8f7;color:#435650;font-size:12px;font-weight:700}
+.maintenance-status[data-state="ok"]{border-color:#b9d9cb;color:#176b59;background:#f0f8f4}
+.maintenance-status[data-state="failed"]{border-color:#efc7c3;color:#a52822;background:#fff5f4}
+.maintenance-status[data-state="running"]{color:#8a6416;background:#fffaf0}
