@@ -16,6 +16,35 @@
   function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
   function titleOf(r){return r.Title||r.title||"Untitled";}
   function showStatus(m,error=false){$("status").textContent=m;$("status").style.color=error?"#b42318":"#657873";}
+  const adminPanel=$("adminPanel");
+  function openAdmin(){
+    adminPanel.classList.remove("hidden");
+    history.pushState({fanStandardPanel:"admin"},"","#admin");
+    requestAnimationFrame(()=>adminPanel.scrollIntoView({behavior:"smooth",block:"start"}));
+  }
+  function closeAdmin(){
+    adminPanel.classList.add("hidden");
+    if(location.hash==="#admin")history.back();
+    window.scrollTo({top:0,behavior:"smooth"});
+  }
+  window.addEventListener("popstate",()=>{
+    if(!adminPanel.classList.contains("hidden"))adminPanel.classList.add("hidden");
+  });
+  async function loadMaintenanceStatus(){
+    const box=$("maintenanceStatus");if(!box)return;
+    box.textContent="Maintenance status: Checking...";
+    try{
+      const response=await fetch("https://api.github.com/repos/saifshuvorpleqc09rfl-alt/QC-Standard/actions/workflows/fan-standard-health.yml/runs?per_page=1",{headers:{Accept:"application/vnd.github+json"}});
+      if(!response.ok)throw new Error("Status unavailable");
+      const data=await response.json(),run=data.workflow_runs?.[0];
+      if(!run){box.textContent="Maintenance status: No check has run yet.";box.dataset.state="unknown";return;}
+      const done=run.status==="completed";
+      const passed=done&&run.conclusion==="success";
+      box.textContent=done?(passed?"Maintenance status: OK · Latest check passed.":"Maintenance status: Attention · Latest check failed."):"Maintenance status: Running...";
+      box.dataset.state=done?(passed?"ok":"failed"):"running";
+      box.title="Last check: "+new Date(run.updated_at).toLocaleString();
+    }catch(_){box.textContent="Maintenance status: Could not retrieve GitHub check.";box.dataset.state="unknown";}
+  }
   function renderPublic(){
     const q=$("search").value.trim().toLowerCase(),cat=$("category").value;
     const rows=allRows.filter(r=>(!cat||r.category===cat)&&(!q||`${titleOf(r)} ${r.content||""} ${r.category||""}`.toLowerCase().includes(q)))
@@ -97,7 +126,8 @@
     catch(e){alert("Delete হয়নি: "+e.message);}
   }
   $("search").addEventListener("input",renderPublic);$("category").addEventListener("change",renderPublic);
-  $("adminOpen").onclick=()=>$("adminPanel").classList.toggle("hidden");
+  $("adminOpen").onclick=()=>{if(adminPanel.classList.contains("hidden")){openAdmin();loadMaintenanceStatus();}else closeAdmin();};
+  $("adminBack").onclick=closeAdmin;
   $("cancelEdit").onclick=resetForm;
   $("login").onclick=async()=>{
     const email=$("email").value.trim(),password=$("password").value,note=$("loginStatus");
@@ -111,9 +141,9 @@
       const admins=await api(`/rest/v1/qc_admins?select=user_id&user_id=eq.${encodeURIComponent(result.user.id)}`);
       if(!Array.isArray(admins)||!admins.length){session=null;throw new Error("এই Email Admin তালিকায় নেই।");}
       $("loginBox").classList.add("hidden");$("editor").classList.remove("hidden");msg("Admin Login সফল হয়েছে।");
-      await loadAdminRows();
+      $("editor").scrollIntoView({behavior:"smooth",block:"start"});loadMaintenanceStatus();await loadAdminRows();
     }catch(e){session=null;msg("Login হয়নি: "+e.message,true);}finally{$("login").disabled=false;}
   };
-  $("logout").onclick=()=>{session=null;adminRows=[];resetForm();$("editor").classList.add("hidden");$("loginBox").classList.remove("hidden");$("password").value="";};
+  $("logout").onclick=()=>{session=null;adminRows=[];resetForm();$("editor").classList.add("hidden");$("loginBox").classList.remove("hidden");$("password").value="";$("loginBox").scrollIntoView({behavior:"smooth",block:"start"});};
   loadStandards();
 })();
