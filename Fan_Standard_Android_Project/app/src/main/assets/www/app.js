@@ -1,7 +1,7 @@
 (() => {
   const cfg=window.FAN_CONFIG,base=cfg.SUPABASE_URL,key=cfg.SUPABASE_ANON_KEY,table=cfg.STANDARDS_TABLE;
   const bucket="qc-standard-images";
-  let session=null,allRows=[],adminRows=[],editingId=null,selectedImage=null;
+  let session=null,allRows=[],adminRows=[],editingId=null,selectedImage=null,selectedCategory="";
   const $=id=>document.getElementById(id);
   const headers=token=>({apikey:key,...(token ? {Authorization:`Bearer ${token}`} : {}),"Content-Type":"application/json"});
   async function api(path,options={}){
@@ -46,7 +46,8 @@
     }catch(_){box.textContent="Maintenance status: Could not retrieve GitHub check.";box.dataset.state="unknown";}
   }
   function renderPublic(){
-    const q=$("search").value.trim().toLowerCase(),cat=$("category").value;
+    const q=$("search").value.trim().toLowerCase(),cat=selectedCategory;
+    document.querySelectorAll(".category-tile").forEach(button=>button.classList.toggle("active",button.dataset.category===cat));
     const rows=allRows.filter(r=>(!cat||r.category===cat)&&(!q||`${titleOf(r)} ${r.content||""} ${r.category||""}`.toLowerCase().includes(q)))
       .sort((a,b)=>(a.category||"").localeCompare(b.category||"")||titleOf(a).localeCompare(titleOf(b)));
     if(!rows.length){$("standards").innerHTML='<article class="item"><p>এখনো কোনো Published Standard পাওয়া যায়নি।</p></article>';return;}
@@ -125,7 +126,8 @@
     try{await api(`/rest/v1/${table}?id=eq.${id}`,{method:"DELETE"});if(editingId===id)resetForm();await Promise.all([loadStandards(),loadAdminRows()]);}
     catch(e){alert("Delete হয়নি: "+e.message);}
   }
-  $("search").addEventListener("input",renderPublic);$("category").addEventListener("change",renderPublic);
+  $("search").addEventListener("input",renderPublic);
+  $("categoryShortcuts").addEventListener("click",event=>{const button=event.target.closest("[data-category]");if(!button)return;selectedCategory=button.dataset.category||"";renderPublic();});
   $("adminOpen").onclick=()=>{if(adminPanel.classList.contains("hidden")){openAdmin();loadMaintenanceStatus();}else closeAdmin();};
   $("adminBack").onclick=closeAdmin;
   $("cancelEdit").onclick=resetForm;
