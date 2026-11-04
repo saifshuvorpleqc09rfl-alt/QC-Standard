@@ -18,6 +18,11 @@
   function safeImageUrl(value){try{const u=new URL(value,base),origin=new URL(base).origin;if(u.protocol!=="https:"||u.origin!==origin||!u.pathname.startsWith(`/storage/v1/object/public/${bucket}/`))return "";return u.href;}catch(_){return "";}}
   function showStatus(m,error=false){$("status").textContent=m;$("status").style.color=error?"#b42318":"#657873";}
   const adminPanel=$("adminPanel");
+  function finishLoadingScreen(){
+    const screen=$("loadingScreen");if(!screen||screen.dataset.finished)return;
+    screen.dataset.finished="true";
+    setTimeout(()=>{screen.classList.add("loading-screen-hidden");setTimeout(()=>screen.remove(),450);},650);
+  }
   function openAdmin(target="panel"){
     const wasHidden=adminPanel.classList.contains("hidden");
     adminPanel.classList.remove("hidden");
@@ -81,6 +86,7 @@
     showStatus("স্ট্যান্ডার্ড লোড হচ্ছে...");
     try{allRows=await api(`/rest/v1/${table}?select=id,Title,title,category,content,is_published,image_url&is_published=eq.true&order=category.asc,Title.asc`);renderPublic();}
     catch(e){showStatus("ডেটা লোড হয়নি: "+e.message,true);$("standards").innerHTML="";}
+    finally{finishLoadingScreen();}
   }
   async function loadAdminRows(){
     const host=$("adminStandards");
