@@ -125,6 +125,15 @@
     if(!rows.length){$("standards").innerHTML='<article class="item"><p>এখনো কোনো Published Standard পাওয়া যায়নি।</p></article>';return;}
     renderStandardCards(rows);
   }
+  function openStandardDetail(id){
+    const r=allRows.find(item=>Number(item.id)===id);if(!r)return;
+    historyIds=[id,...historyIds.filter(x=>x!==id)].slice(0,50);saveLocalIds("fanStandardHistory",historyIds);
+    const imageUrl=safeImageUrl(r.image_url);
+    $("standardDetailContent").innerHTML=(imageUrl?'<img class="standard-image" src="'+esc(imageUrl)+'" alt="'+esc(titleOf(r))+'" referrerpolicy="no-referrer">' : "")+'<span class="tag">'+esc(r.category||"Standard")+'</span><h2 id="detailTitle">'+esc(titleOf(r))+'</h2><div class="detail-content">'+esc(r.content||"বিস্তারিত তথ্য দেওয়া নেই।")+'</div>';
+    const dialog=$("standardDetail");if(!dialog.open)dialog.showModal();
+  }
+  $("closeStandardDetail").addEventListener("click",()=>$("standardDetail").close());
+  $("standardDetail").addEventListener("click",event=>{if(event.target===$("standardDetail"))$("standardDetail").close();});
   function renderStandardCards(rows){
     let last="";const html=[];
     for(const r of rows){if(activeTab==="home"&&r.category!==last){last=r.category||"Other";html.push(`<h3 class="category-heading">${esc(last)}</h3>`);}
@@ -136,7 +145,7 @@
   $("standards").addEventListener("click",event=>{
     const fav=event.target.closest("[data-favorite]"),view=event.target.closest("[data-view]");
     if(fav){const id=Number(fav.dataset.favorite);favoriteIds=favoriteIds.includes(id)?favoriteIds.filter(x=>x!==id):[...favoriteIds,id];saveLocalIds("fanStandardFavorites",favoriteIds);renderPublic();}
-    if(view){const id=Number(view.dataset.view);historyIds=[id,...historyIds.filter(x=>x!==id)].slice(0,50);saveLocalIds("fanStandardHistory",historyIds);showStatus("Recently Viewed-তে সংরক্ষণ হয়েছে।");}
+    if(view){openStandardDetail(Number(view.dataset.view));}
   });
   async function loadStandards(){
     showStatus("স্ট্যান্ডার্ড লোড হচ্ছে...");
