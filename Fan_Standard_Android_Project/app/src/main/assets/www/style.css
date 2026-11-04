@@ -31,3 +31,11 @@ html{scroll-behavior:smooth;scroll-padding-top:82px}
 
 /* Compact category shortcuts on the home screen */
 .category-shortcuts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0 0 14px}.category-tile{min-height:68px;padding:9px 5px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:#fff;border:1px solid #dce7e3;border-radius:12px;color:#29443d;font-size:11px;font-weight:700}.category-icon{width:25px;height:25px;display:grid;place-items:center;border-radius:8px;background:#edf3f0;color:#245c50;font-size:17px;font-weight:800}.category-tile.active{border-color:#245c50;background:#edf4f1;box-shadow:inset 0 0 0 1px #245c50}.category-tile.active .category-icon{background:#245c50;color:#fff}.filters{margin-bottom:8px}
+
+
+/* Public three-dot navigation */
+.menu-wrap{position:relative;margin-left:auto;flex:0 0 auto}
+header .menu-wrap>.menu-toggle{margin-left:0;width:38px;height:38px;padding:0;border:1px solid #ffffff55;border-radius:10px;background:#ffffff12;color:#fff;font-size:25px;line-height:1}
+.top-menu{position:absolute;right:0;top:calc(100% + 8px);z-index:10;min-width:150px;padding:6px;background:#fff;border:1px solid #dce7e3;border-radius:12px;box-shadow:0 8px 24px #102d2926}
+.top-menu button{display:block;width:100%;margin:0;padding:11px 12px;text-align:left;background:transparent;color:#243b35;border-radius:8px;font-size:13px}
+.top-menu button:active,.top-menu button:hover{background:#edf4f1}
