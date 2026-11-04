@@ -55,10 +55,16 @@
       box.title="Last check: "+new Date(run.updated_at).toLocaleString();
     }catch(_){box.textContent="Maintenance status: Could not retrieve GitHub check.";box.dataset.state="unknown";}
   }
-  function renderPublic(){
+  const appTutorials=[{"title":"ক্যাটাগরি থেকে Standard দেখুন","content":"১. Home page-এ আপনার প্রয়োজনীয় Category নির্বাচন করুন।\\n২. নির্বাচিত Category-এর Published Standard-গুলো দেখাবে।\\n৩. অন্য Category দেখতে সেটিতে চাপ দিন।"},{"title":"Search ব্যবহার করুন","content":"১. Search বক্সে Standard-এর নাম বা প্রয়োজনীয় শব্দ লিখুন।\\n২. মিল থাকা Published Standard-গুলো দেখাবে।\\n৩. Search মুছে দিলে আবার Category নির্বাচন করে Standard দেখতে পারবেন।"},{"title":"Standard-এর বিস্তারিত পড়ুন","content":"১. Standard-এর Title ও Category দেখুন।\\n২. Details অংশে দেওয়া নির্দেশনা মনোযোগ দিয়ে পড়ুন।\\n৩. কোনো ছবি থাকলে সেটিও দেখে নিন।"},{"title":"ছবি দেখা","content":"কোনো Standard-এর সঙ্গে ছবি যুক্ত থাকলে সেটি Standard-এর কার্ডে দেখা যাবে। ছবিটি দেখে প্রয়োজনীয় অংশ বা মাপ বুঝে নিন।"},{"title":"Maintenance Status দেখা","content":"১. উপরের ডান পাশের তিন-ডট মেনুতে চাপ দিন।\\n২. Maintenance নির্বাচন করুন।\\n৩. সর্বশেষ সিস্টেম চেকের অবস্থা দেখতে পারবেন।"}];\n  function renderPublic(){
     const q=$("search").value.trim().toLowerCase(),cat=selectedCategory;
     document.querySelectorAll(".category-tile").forEach(button=>button.classList.toggle("active",button.dataset.category===cat));
     if(!q&&!cat){$("standards").innerHTML="";showStatus("Standard দেখতে একটি Category নির্বাচন করুন অথবা Search করুন।");return;}
+    if(cat==="App Tutorial"){
+      const lessons=appTutorials.filter(item=>!q||`${item.title} ${item.content}`.toLowerCase().includes(q));
+      if(!lessons.length){$("standards").innerHTML="";showStatus("এই Search-এর সঙ্গে কোনো Tutorial মেলেনি।");return;}
+      $("standards").innerHTML=lessons.map(item=>`<article class="item tutorial-item"><span class="tag">APP TUTORIAL</span><h3>${esc(item.title)}</h3><p>${esc(item.content)}</p></article>`).join("");
+      showStatus(`${lessons.length}টি User Tutorial`);return;
+    }
     const rows=allRows.filter(r=>(!cat||r.category===cat)&&(!q||`${titleOf(r)} ${r.content||""} ${r.category||""}`.toLowerCase().includes(q)))
       .sort((a,b)=>(a.category||"").localeCompare(b.category||"")||titleOf(a).localeCompare(titleOf(b)));
     if(!rows.length){$("standards").innerHTML='<article class="item"><p>এখনো কোনো Published Standard পাওয়া যায়নি।</p></article>';return;}
