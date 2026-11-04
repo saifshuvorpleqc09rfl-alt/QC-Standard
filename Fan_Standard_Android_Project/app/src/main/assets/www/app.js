@@ -17,11 +17,21 @@
   function titleOf(r){return r.Title||r.title||"Untitled";}
   function showStatus(m,error=false){$("status").textContent=m;$("status").style.color=error?"#b42318":"#657873";}
   const adminPanel=$("adminPanel");
-  function openAdmin(){
+  function openAdmin(target="panel"){
+    const wasHidden=adminPanel.classList.contains("hidden");
     adminPanel.classList.remove("hidden");
-    history.pushState({fanStandardPanel:"admin"},"","#admin");
-    requestAnimationFrame(()=>adminPanel.scrollIntoView({behavior:"smooth",block:"start"}));
+    if(wasHidden)history.pushState({fanStandardPanel:"admin"},"","#admin");
+    requestAnimationFrame(()=>{
+      const destination=target==="login"?$("loginBox"):target==="maintenance"?$("maintenanceStatus"):adminPanel;
+      destination.scrollIntoView({behavior:"smooth",block:"start"});
+    });
   }
+  const menuToggle=$("menuToggle"),topMenu=$("topMenu");
+  function closeTopMenu(){topMenu.classList.add("hidden");menuToggle.setAttribute("aria-expanded","false");}
+  menuToggle.onclick=()=>{const opening=topMenu.classList.contains("hidden");topMenu.classList.toggle("hidden",!opening);menuToggle.setAttribute("aria-expanded",String(opening));};
+  $("menuLogin").onclick=()=>{closeTopMenu();openAdmin("login");};
+  $("menuMaintenance").onclick=()=>{closeTopMenu();openAdmin("maintenance");loadMaintenanceStatus();};
+  document.addEventListener("click",event=>{if(!event.target.closest(".menu-wrap"))closeTopMenu();});
   function closeAdmin(){
     adminPanel.classList.add("hidden");
     if(location.hash==="#admin")history.back();
@@ -128,7 +138,7 @@
   }
   $("search").addEventListener("input",renderPublic);
   $("categoryShortcuts").addEventListener("click",event=>{const button=event.target.closest("[data-category]");if(!button)return;selectedCategory=button.dataset.category||"";renderPublic();});
-  $("adminOpen").onclick=()=>{if(adminPanel.classList.contains("hidden")){openAdmin();loadMaintenanceStatus();}else closeAdmin();};
+
   $("adminBack").onclick=closeAdmin;
   $("cancelEdit").onclick=resetForm;
   $("login").onclick=async()=>{
