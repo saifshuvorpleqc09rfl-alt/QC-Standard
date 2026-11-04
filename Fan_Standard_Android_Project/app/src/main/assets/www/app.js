@@ -15,6 +15,7 @@
   }
   function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
   function titleOf(r){return r.Title||r.title||"Untitled";}
+  function safeImageUrl(value){try{const u=new URL(value,base),origin=new URL(base).origin;if(u.protocol!=="https:"||u.origin!==origin||!u.pathname.startsWith(`/storage/v1/object/public/${bucket}/`))return "";return u.href;}catch(_){return "";}}
   function showStatus(m,error=false){$("status").textContent=m;$("status").style.color=error?"#b42318":"#657873";}
   const adminPanel=$("adminPanel");
   function openAdmin(target="panel"){
@@ -71,7 +72,8 @@
     if(!rows.length){$("standards").innerHTML='<article class="item"><p>এখনো কোনো Published Standard পাওয়া যায়নি।</p></article>';return;}
     let last="";const html=[];
     for(const r of rows){if(r.category!==last){last=r.category||"Other";html.push(`<h3 class="category-heading">${esc(last)}</h3>`);}
-      html.push(`<article class="item">${r.image_url?`<img class="standard-image" src="${esc(r.image_url)}" alt="${esc(titleOf(r))}" loading="lazy">`:""}<span class="tag">${esc(r.category||"Standard")}</span><h3>${esc(titleOf(r))}</h3><p>${esc(r.content)}</p></article>`);
+      const imageUrl=safeImageUrl(r.image_url);
+      html.push(`<article class="item">${imageUrl?`<img class="standard-image" src="${esc(imageUrl)}" alt="${esc(titleOf(r))}" loading="lazy" referrerpolicy="no-referrer">`:""}<span class="tag">${esc(r.category||"Standard")}</span><h3>${esc(titleOf(r))}</h3><p>${esc(r.content)}</p></article>`);
     }
     $("standards").innerHTML=html.join("");
   }
@@ -104,21 +106,31 @@
   function startEdit(id){
     const r=adminRows.find(x=>Number(x.id)===id);if(!r)return;
     editingId=id;$("title").value=titleOf(r);$("content").value=r.content||"";$("newCategory").value=r.category||"Fan Parts";$("publishNow").checked=!!r.is_published;
-    selectedImage=null;$("imageFile").value="";$("imagePreview").innerHTML=r.image_url?`<img class="preview-image" src="${esc(r.image_url)}" alt="বর্তমান ছবি">`:"";
+    selectedImage=null;$("imageFile").value="";const currentImage=safeImageUrl(r.image_url);$("imagePreview").innerHTML=currentImage?`<img class="preview-image" src="${esc(currentImage)}" alt="বর্তমান ছবি" referrerpolicy="no-referrer">`:"";
     $("save").textContent="Update Standard";$("cancelEdit").classList.remove("hidden");$("formHeading").textContent="Standard Edit করুন";
     $("editor").scrollIntoView({behavior:"smooth",block:"start"});
   }
   async function uploadImage(){
     if(!selectedImage)return null;
-    if(!selectedImage.type.startsWith("image/"))throw new Error("শুধু ছবি নির্বাচন করুন।");
-    if(selectedImage.size>5*1024*1024)throw new Error("ছবির সাইজ ৫ MB-এর মধ্যে রাখুন।");
-    const ext=(selectedImage.name.split(".").pop()||"jpg").toLowerCase().replace(/[^a-z0-9]/g,"")||"jpg";
-    const path=`${session.user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    if(selectedImage.size===0||selectedImage.size>5*1024*1024)throw new Error("ছবির সাইজ ১ byte থেকে ৫ MB-এর মধ্যে রাখুন।");
+    const formats={
+      "image/jpeg":{ext:"jpg",check:b=>b[0]===0xff&&b[1]===0xd8&&b[2]===0xff},
+      "image/png":{ext:"png",check:b=>b[0]===0x89&&b[1]===0x50&&b[2]===0x4e&&b[3]===0x47&&b[4]===0x0d&&b[5]===0x0a&&b[6]===0x1a&&b[7]===0x0a},
+      "image/webp":{ext:"webp",check:b=>b[0]===0x52&&b[1]===0x49&&b[2]===0x46&&b[3]===0x46&&b[8]===0x57&&b[9]===0x45&&b[10]===0x42&&b[11]===0x50}
+    };
+    const format=formats[selectedImage.type];
+    if(!format)throw new Error("শুধু JPG, PNG অথবা WebP ছবি আপলোড করা যাবে। SVG ও অন্য ফাইল অনুমোদিত নয়।");
+    const bytes=new Uint8Array(await selectedImage.slice(0,12).arrayBuffer());
+    if(!format.check(bytes))throw new Error("ফাইলের প্রকৃত ধরন যাচাই হয়নি। অন্য ছবি নির্বাচন করুন।");
+    const path=`${session.user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${format.ext}`;
     await api(`/storage/v1/object/${bucket}/${path}`,{method:"POST",headers:{"Content-Type":selectedImage.type,"x-upsert":"false"},body:selectedImage});
     return `${base}/storage/v1/object/public/${bucket}/${path}`;
   }
   $("imageFile").addEventListener("change",e=>{
     selectedImage=e.target.files?.[0]||null;
+    if(selectedImage&&(selectedImage.size===0||selectedImage.size>5*1024*1024||!["image/jpeg","image/png","image/webp"].includes(selectedImage.type))){
+      selectedImage=null;e.target.value="";$("imagePreview").innerHTML="";alert("শুধু JPG, PNG অথবা WebP ছবি (সর্বোচ্চ ৫ MB) নির্বাচন করুন।");return;
+    }
     $("imagePreview").innerHTML=selectedImage?`<img class="preview-image" src="${URL.createObjectURL(selectedImage)}" alt="নির্বাচিত ছবি">`:"";
   });
   $("save").onclick=async()=>{
