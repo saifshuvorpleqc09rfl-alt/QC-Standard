@@ -2,6 +2,25 @@
   const cfg=window.FAN_CONFIG,base=cfg.SUPABASE_URL,key=cfg.SUPABASE_ANON_KEY,table=cfg.STANDARDS_TABLE;
   const bucket="qc-standard-images";
   let session=null,allRows=[],adminRows=[],editingId=null,selectedImage=null,selectedCategory="";
+  let activeTab="home";
+  function readLocalIds(key){try{const value=JSON.parse(localStorage.getItem(key)||"[]");return Array.isArray(value)?value.map(Number).filter(Number.isFinite):[];}catch(_){return [];}}
+  let favoriteIds=readLocalIds("fanStandardFavorites"),historyIds=readLocalIds("fanStandardHistory");
+  function saveLocalIds(key,ids){try{localStorage.setItem(key,JSON.stringify(ids));}catch(_){}}
+  function updateBottomNav(){
+    document.querySelectorAll(".nav-item").forEach(button=>{const active=button.dataset.tab===activeTab;button.classList.toggle("active",active);if(active)button.setAttribute("aria-current","page");else button.removeAttribute("aria-current");});
+    const home=activeTab==="home",categories=activeTab==="categories";
+    $(".intro").classList.toggle("hidden",!home);
+    $("categoryShortcuts").classList.toggle("hidden",!(home||categories));
+    $(".filters").classList.toggle("hidden",!home);
+    $("results-toolbar").classList.toggle("hidden",categories);
+    $("homeBack").classList.toggle("hidden",!home||(!selectedCategory&&!$("search").value.trim()));
+  }
+  function changeTab(tab){
+    if(!["home","categories","favorites","history","profile"].includes(tab))return;
+    activeTab=tab;selectedCategory="";$("search").value="";searchHistoryActive=false;clearSearchVisibility();updateBottomNav();renderPublic();window.scrollTo({top:0,behavior:"smooth"});
+  }
+  function clearSearchVisibility(){const clear=$("clearSearch");if(clear)clear.classList.add("hidden");}
+  $("bottomNav").addEventListener("click",event=>{const button=event.target.closest("[data-tab]");if(button)changeTab(button.dataset.tab);});
   const $=id=>document.getElementById(id);
   const headers=token=>({apikey:key,...(token ? {Authorization:`Bearer ${token}`} : {}),"Content-Type":"application/json"});
   async function api(path,options={}){
@@ -78,7 +97,20 @@
   }
   const appTutorials=[{"title":"ক্যাটাগরি থেকে Standard দেখুন","content":"১. Home page-এ আপনার প্রয়োজনীয় Category নির্বাচন করুন।\\n২. নির্বাচিত Category-এর Published Standard-গুলো দেখাবে।\\n৩. অন্য Category দেখতে সেটিতে চাপ দিন।"},{"title":"Search ব্যবহার করুন","content":"১. Search বক্সে Standard-এর নাম বা প্রয়োজনীয় শব্দ লিখুন।\\n২. মিল থাকা Published Standard-গুলো দেখাবে।\\n৩. Search মুছে দিলে আবার Category নির্বাচন করে Standard দেখতে পারবেন।"},{"title":"Standard-এর বিস্তারিত পড়ুন","content":"১. Standard-এর Title ও Category দেখুন।\\n২. Details অংশে দেওয়া নির্দেশনা মনোযোগ দিয়ে পড়ুন।\\n৩. কোনো ছবি থাকলে সেটিও দেখে নিন।"},{"title":"ছবি দেখা","content":"কোনো Standard-এর সঙ্গে ছবি যুক্ত থাকলে সেটি Standard-এর কার্ডে দেখা যাবে। ছবিটি দেখে প্রয়োজনীয় অংশ বা মাপ বুঝে নিন।"},{"title":"Maintenance Status দেখা","content":"১. উপরের ডান পাশের তিন-ডট মেনুতে চাপ দিন।\\n২. Maintenance নির্বাচন করুন।\\n৩. সর্বশেষ সিস্টেম চেকের অবস্থা দেখতে পারবেন।"}]; 
   function renderPublic(){
+    updateBottomNav();
     const q=$("search").value.trim().toLowerCase(),cat=selectedCategory;
+    if(activeTab==="categories"){ $("standards").innerHTML="";showStatus("আপনার প্রয়োজনীয় Category নির্বাচন করুন।");return; }
+    if(activeTab==="profile"){
+      $("standards").innerHTML=`<section class="profile-card"><div class="profile-mark">FS</div><h3>FAN STANDARD</h3><p>RFL · QUALITY CONTROL</p><p>ফ্যানের মানদণ্ড এক জায়গায়। প্রয়োজনীয় Standard সহজে খুঁজে দেখুন।</p><div class="profile-stat"><span>Saved Favorites</span><strong>${favoriteIds.length}</strong></div><div class="profile-stat"><span>Recently Viewed</span><strong>${historyIds.length}</strong></div><div class="profile-stat"><span>App Version</span><strong>1.2</strong></div></section><section class="profile-card"><h3>About</h3><p>Developed by Saif Shuvo</p><p>Quality first · Fan Standard</p></section>`;
+      showStatus("আপনার App Profile");return;
+    }
+    if(activeTab==="favorites"||activeTab==="history"){
+      const ids=activeTab==="favorites"?favoriteIds:historyIds;
+      const ordered=activeTab==="history"?ids:ids.slice().reverse();
+      const rows=ordered.map(id=>allRows.find(r=>Number(r.id)===id)).filter(Boolean);
+      if(!rows.length){$("standards").innerHTML='<article class="item"><p>'+(activeTab==="favorites"?"এখনো কোনো Favorite Standard সংরক্ষণ করা হয়নি।":"এখনো কোনো Standard দেখা হয়নি।")+'</p></article>';showStatus(activeTab==="favorites"?"আপনার Favorite Standard":"Recently Viewed Standard");return;}
+      renderStandardCards(rows);showStatus(rows.length+"টি "+(activeTab==="favorites"?"Favorite Standard":"Recently Viewed Standard"));return;
+    }
     syncHomeBack();
     document.querySelectorAll(".category-tile").forEach(button=>button.classList.toggle("active",button.dataset.category===cat));
     if(!q&&!cat){$("standards").innerHTML="";showStatus("Standard দেখতে একটি Category নির্বাচন করুন অথবা Search করুন।");return;}
@@ -91,13 +123,21 @@
     const rows=allRows.filter(r=>(!cat||r.category===cat)&&(!q||`${titleOf(r)} ${r.content||""} ${r.category||""}`.toLowerCase().includes(q)))
       .sort((a,b)=>(a.category||"").localeCompare(b.category||"")||titleOf(a).localeCompare(titleOf(b)));
     if(!rows.length){$("standards").innerHTML='<article class="item"><p>এখনো কোনো Published Standard পাওয়া যায়নি।</p></article>';return;}
+    renderStandardCards(rows);
+  }
+  function renderStandardCards(rows){
     let last="";const html=[];
-    for(const r of rows){if(r.category!==last){last=r.category||"Other";html.push(`<h3 class="category-heading">${esc(last)}</h3>`);}
-      const imageUrl=safeImageUrl(r.image_url);
-      html.push(`<article class="item">${imageUrl?`<img class="standard-image" src="${esc(imageUrl)}" alt="${esc(titleOf(r))}" loading="lazy" referrerpolicy="no-referrer">`:""}<span class="tag">${esc(r.category||"Standard")}</span><h3>${esc(titleOf(r))}</h3><p>${esc(r.content)}</p></article>`);
+    for(const r of rows){if(activeTab==="home"&&r.category!==last){last=r.category||"Other";html.push(`<h3 class="category-heading">${esc(last)}</h3>`);}
+      const imageUrl=safeImageUrl(r.image_url),id=Number(r.id),saved=favoriteIds.includes(id);
+      html.push(`<article class="item">${imageUrl?`<img class="standard-image" src="${esc(imageUrl)}" alt="${esc(titleOf(r))}" loading="lazy" referrerpolicy="no-referrer">`:""}<span class="tag">${esc(r.category||"Standard")}</span><h3>${esc(titleOf(r))}</h3><p>${esc(r.content)}</p><div class="standard-actions"><button type="button" data-view="${id}">Open</button><button type="button" data-favorite="${id}" class="${saved?"is-favorite":""}">${saved?"♥ Saved":"♡ Favorite"}</button></div></article>`);
     }
     $("standards").innerHTML=html.join("");
   }
+  $("standards").addEventListener("click",event=>{
+    const fav=event.target.closest("[data-favorite]"),view=event.target.closest("[data-view]");
+    if(fav){const id=Number(fav.dataset.favorite);favoriteIds=favoriteIds.includes(id)?favoriteIds.filter(x=>x!==id):[...favoriteIds,id];saveLocalIds("fanStandardFavorites",favoriteIds);renderPublic();}
+    if(view){const id=Number(view.dataset.view);historyIds=[id,...historyIds.filter(x=>x!==id)].slice(0,50);saveLocalIds("fanStandardHistory",historyIds);showStatus("Recently Viewed-তে সংরক্ষণ হয়েছে।");}
+  });
   async function loadStandards(){
     showStatus("স্ট্যান্ডার্ড লোড হচ্ছে...");
     try{allRows=await api(`/rest/v1/${table}?select=id,Title,title,category,content,is_published,image_url&is_published=eq.true&order=category.asc,Title.asc`);renderPublic();}
@@ -202,7 +242,7 @@
   });
   $("categoryShortcuts").addEventListener("click",event=>{
     const button=event.target.closest("[data-category]");if(!button)return;
-    selectedCategory=button.dataset.category||"";searchInput.value="";searchHistoryActive=false;
+    activeTab="home";selectedCategory=button.dataset.category||"";searchInput.value="";searchHistoryActive=false;updateBottomNav();
     history.pushState({fanStandardView:"category",fanStandardCategory:selectedCategory,fanStandardQuery:""},"","#category-"+encodeURIComponent(selectedCategory.toLowerCase().replace(/\\s+/g,"-")));
     renderPublic();
     requestAnimationFrame(()=>$("standards").scrollIntoView({behavior:"smooth",block:"start"}));
@@ -226,5 +266,6 @@
     }catch(e){session=null;msg("Login হয়নি: "+e.message,true);}finally{$("login").disabled=false;}
   };
   $("logout").onclick=()=>{session=null;adminRows=[];resetForm();$("editor").classList.add("hidden");$("loginBox").classList.remove("hidden");$("password").value="";$("loginBox").scrollIntoView({behavior:"smooth",block:"start"});};
+  updateBottomNav();
   loadStandards();
 })();
