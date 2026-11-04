@@ -1,0 +1,49 @@
+name: Fan Standard Daily Health Check
+
+on:
+  schedule:
+    - cron: "0 2 * * *" # Daily at 08:00 Bangladesh time (UTC+6)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fan-standard-health-check
+  cancel-in-progress: true
+
+jobs:
+  health-check:
+    name: Check Supabase read access
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check published standards API
+        env:
+          SUPABASE_URL: https://slhvxvxlmvepojxyyfhs.supabase.co
+          SUPABASE_ANON_KEY: sb_publishable_p87-TW78KSYnVVKmOAybRw_SiNO5vL4
+        run: |
+          set -euo pipefail
+
+          response_file="$RUNNER_TEMP/fan-standard-health.json"
+          http_code="$(curl --silent --show-error \
+            --output "$response_file" \
+            --write-out "%{http_code}" \
+            --retry 2 --retry-delay 3 --max-time 20 \
+            "$SUPABASE_URL/rest/v1/QC%20Standard?select=id&is_published=eq.true&limit=1" \
+            --header "apikey: $SUPABASE_ANON_KEY" \
+            --header "Authorization: Bearer $SUPABASE_ANON_KEY" \
+            --header "Accept: application/json")"
+
+          if [ "$http_code" != "200" ]; then
+            echo "::error::Supabase API health check failed (HTTP $http_code)."
+            exit 1
+          fi
+
+          if ! jq -e 'type == "array"' "$response_file" >/dev/null; then
+            echo "::error::Supabase responded, but the standards response was not valid JSON array data."
+            exit 1
+          fi
+
+          echo "SUCCESS: Supabase REST API is reachable and the Published Standards read request succeeded."
+          echo "No records or personal data were printed. This check is read-only."
