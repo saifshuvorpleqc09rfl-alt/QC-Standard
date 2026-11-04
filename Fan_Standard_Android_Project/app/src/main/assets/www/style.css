@@ -27,3 +27,7 @@ html{scroll-behavior:smooth;scroll-padding-top:82px}
 .maintenance-status[data-state="ok"]{border-color:#b9d9cb;color:#176b59;background:#f0f8f4}
 .maintenance-status[data-state="failed"]{border-color:#efc7c3;color:#a52822;background:#fff5f4}
 .maintenance-status[data-state="running"]{color:#8a6416;background:#fffaf0}
+
+
+/* Compact category shortcuts on the home screen */
+.category-shortcuts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0 0 14px}.category-tile{min-height:68px;padding:9px 5px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:#fff;border:1px solid #dce7e3;border-radius:12px;color:#29443d;font-size:11px;font-weight:700}.category-icon{width:25px;height:25px;display:grid;place-items:center;border-radius:8px;background:#edf3f0;color:#245c50;font-size:17px;font-weight:800}.category-tile.active{border-color:#245c50;background:#edf4f1;box-shadow:inset 0 0 0 1px #245c50}.category-tile.active .category-icon{background:#245c50;color:#fff}.filters{margin-bottom:8px}
