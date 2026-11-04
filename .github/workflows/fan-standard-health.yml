@@ -1,6 +1,9 @@
 name: Fan Standard Daily Health Check
 
 on:
+  push:
+    paths:
+      - ".github/workflows/fan-standard-health.yml"
   schedule:
     - cron: "0 2 * * *" # Daily at 08:00 Bangladesh time (UTC+6)
   workflow_dispatch:
