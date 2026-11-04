@@ -44,3 +44,5 @@ header .menu-wrap>.menu-toggle{margin-left:0;width:38px;height:38px;padding:0;bo
 /* Move the three-dot menu closer to the top-right corner */
 header{padding-right:8px}
 .menu-wrap{margin-right:0}
+
+.developer-credit{display:inline-block;margin-top:6px;font-size:10px;letter-spacing:.2px;color:#71817b}
