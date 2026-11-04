@@ -1,6 +1,7 @@
 (() => {
   const cfg=window.FAN_CONFIG,base=cfg.SUPABASE_URL,key=cfg.SUPABASE_ANON_KEY,table=cfg.STANDARDS_TABLE;
   const bucket="qc-standard-images";
+  const $=id=>document.getElementById(id);
   let session=null,allRows=[],adminRows=[],editingId=null,selectedImage=null,selectedCategory="";
   let activeTab="home";
   function readLocalIds(key){try{const value=JSON.parse(localStorage.getItem(key)||"[]");return Array.isArray(value)?value.map(Number).filter(Number.isFinite):[];}catch(_){return [];}}
@@ -21,7 +22,6 @@
   }
   function clearSearchVisibility(){const clear=$("clearSearch");if(clear)clear.classList.add("hidden");}
   $("bottomNav").addEventListener("click",event=>{const button=event.target.closest("[data-tab]");if(button)changeTab(button.dataset.tab);});
-  const $=id=>document.getElementById(id);
   const headers=token=>({apikey:key,...(token ? {Authorization:`Bearer ${token}`} : {}),"Content-Type":"application/json"});
   async function api(path,options={}){
     const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),20000);let res;
