@@ -162,7 +162,15 @@
     try{await api(`/rest/v1/${table}?id=eq.${id}`,{method:"DELETE"});if(editingId===id)resetForm();await Promise.all([loadStandards(),loadAdminRows()]);}
     catch(e){alert("Delete হয়নি: "+e.message);}
   }
-  $("search").addEventListener("input",()=>{if($("search").value.trim())selectedCategory="";renderPublic();});
+  const searchInput=$("search"),clearSearch=$("clearSearch");
+  function updateSearch(){
+    const hasQuery=!!searchInput.value.trim();
+    clearSearch.classList.toggle("hidden",!hasQuery);
+    if(hasQuery)selectedCategory="";
+    renderPublic();
+  }
+  searchInput.addEventListener("input",updateSearch);
+  clearSearch.addEventListener("click",()=>{searchInput.value="";updateSearch();searchInput.focus();});
   $("categoryShortcuts").addEventListener("click",event=>{const button=event.target.closest("[data-category]");if(!button)return;selectedCategory=button.dataset.category||"";renderPublic();});
 
   $("adminBack").onclick=closeAdmin;
