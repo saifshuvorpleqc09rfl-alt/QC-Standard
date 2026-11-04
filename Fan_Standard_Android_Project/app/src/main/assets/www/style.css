@@ -115,3 +115,7 @@ body{padding-bottom:calc(78px + env(safe-area-inset-bottom))}
 .profile-card h3{margin:0 0 6px;font-size:17px}.profile-card p{font-size:12px;line-height:1.7;color:#657873;margin:5px 0}
 .profile-stat{display:flex;justify-content:space-between;padding:10px 0;border-top:1px solid #edf1ef;font-size:12px;color:#52635e}
 @media(prefers-reduced-motion:reduce){.nav-item{transition:none}}
+
+
+/* Full Standard detail view */
+.standard-detail{width:min(92vw,680px);max-width:680px;max-height:82vh;margin:auto;padding:20px;border:1px solid #dce7e3;border-radius:18px;background:#fff;color:#172a27;box-shadow:0 18px 60px #102d2933;overflow:auto}.standard-detail::backdrop{background:#102d29a6;backdrop-filter:blur(3px)}.standard-detail h2{font-size:19px;line-height:1.4;margin:2px 0 12px}.standard-detail .detail-content{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.8;font-size:14px;color:#435650;margin:14px 0}.standard-detail .standard-image{max-height:360px}.detail-close{width:100%;margin-top:8px;background:#123b35;color:#fff;padding:12px}
