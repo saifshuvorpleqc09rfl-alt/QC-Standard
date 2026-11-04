@@ -48,3 +48,16 @@ header{padding-right:8px}
 .developer-credit{display:inline-block;margin-top:6px;font-size:10px;letter-spacing:.2px;color:#71817b}
 
 .tutorial-item p{line-height:1.8;white-space:pre-line}
+
+
+/* Premium first-load screen */
+.loading-screen{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;background:#f4f7f6;opacity:1;visibility:visible;transition:opacity .4s ease,visibility .4s ease}
+.loading-screen-hidden{opacity:0;visibility:hidden;pointer-events:none}
+.loading-content{display:flex;flex-direction:column;align-items:center;text-align:center;padding:24px}
+.loading-mark{width:76px;height:76px;display:grid;place-items:center;border-radius:23px;background:#123b35;color:#e2eee9;font-size:27px;font-weight:800;letter-spacing:1px;box-shadow:0 10px 28px #123b3524}
+.loading-brand{margin-top:20px;color:#123b35;font-size:15px;font-weight:800;letter-spacing:2.5px}
+.loading-subtitle{margin-top:7px;color:#657873;font-size:12px}
+.loading-spinner{width:25px;height:25px;margin-top:28px;border:2px solid #d6e3de;border-top-color:#176b59;border-radius:50%;animation:fan-standard-spin .8s linear infinite}
+.loading-caption{margin-top:11px;color:#71817b;font-size:11px;letter-spacing:.3px}
+@keyframes fan-standard-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.loading-screen{transition:none}.loading-spinner{animation:none;border-top-color:#176b59}}
