@@ -58,6 +58,7 @@
   function renderPublic(){
     const q=$("search").value.trim().toLowerCase(),cat=selectedCategory;
     document.querySelectorAll(".category-tile").forEach(button=>button.classList.toggle("active",button.dataset.category===cat));
+    if(!q&&!cat){$("standards").innerHTML="";showStatus("Standard দেখতে একটি Category নির্বাচন করুন অথবা Search করুন।");return;}
     const rows=allRows.filter(r=>(!cat||r.category===cat)&&(!q||`${titleOf(r)} ${r.content||""} ${r.category||""}`.toLowerCase().includes(q)))
       .sort((a,b)=>(a.category||"").localeCompare(b.category||"")||titleOf(a).localeCompare(titleOf(b)));
     if(!rows.length){$("standards").innerHTML='<article class="item"><p>এখনো কোনো Published Standard পাওয়া যায়নি।</p></article>';return;}
@@ -69,7 +70,7 @@
   }
   async function loadStandards(){
     showStatus("স্ট্যান্ডার্ড লোড হচ্ছে...");
-    try{allRows=await api(`/rest/v1/${table}?select=id,Title,title,category,content,is_published,image_url&is_published=eq.true&order=category.asc,Title.asc`);renderPublic();showStatus(`${allRows.length}টি Published Standard`);}
+    try{allRows=await api(`/rest/v1/${table}?select=id,Title,title,category,content,is_published,image_url&is_published=eq.true&order=category.asc,Title.asc`);renderPublic();}
     catch(e){showStatus("ডেটা লোড হয়নি: "+e.message,true);$("standards").innerHTML="";}
   }
   async function loadAdminRows(){
@@ -136,7 +137,7 @@
     try{await api(`/rest/v1/${table}?id=eq.${id}`,{method:"DELETE"});if(editingId===id)resetForm();await Promise.all([loadStandards(),loadAdminRows()]);}
     catch(e){alert("Delete হয়নি: "+e.message);}
   }
-  $("search").addEventListener("input",renderPublic);
+  $("search").addEventListener("input",()=>{if($("search").value.trim())selectedCategory="";renderPublic();});
   $("categoryShortcuts").addEventListener("click",event=>{const button=event.target.closest("[data-category]");if(!button)return;selectedCategory=button.dataset.category||"";renderPublic();});
 
   $("adminBack").onclick=closeAdmin;
